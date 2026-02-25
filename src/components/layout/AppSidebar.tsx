@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FileText, Shield, ScrollText, Share2, Key,
   Users, Inbox, Settings2, Search, Download,
   Building2, Network, BookOpen, UserCog,
-  ChevronLeft, LogOut, Repeat,
+  ChevronLeft, LogOut, Repeat, Settings, HelpCircle,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -52,6 +52,11 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { title: "Users", path: "/admin/users", icon: UserCog },
   ],
 };
+
+const GLOBAL_NAV: NavItem[] = [
+  { title: "Settings", path: "/settings", icon: Settings },
+  { title: "Help", path: "/help", icon: HelpCircle },
+];
 
 const ROLE_LABELS: Record<UserRole, string> = {
   patient: "Patient Portal",
@@ -101,6 +106,27 @@ export function AppSidebar() {
       {/* Nav */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {items.map(item => {
+          const isActive = location.pathname === item.path || (item.path === "/patient/consents" && location.pathname.startsWith("/patient/consents/"));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-primary"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {!collapsed && <span>{item.title}</span>}
+            </Link>
+          );
+        })}
+
+        {/* Divider + Global nav */}
+        <div className="my-2 border-t border-sidebar-border" />
+        {GLOBAL_NAV.map(item => {
           const isActive = location.pathname === item.path;
           return (
             <Link
@@ -132,7 +158,7 @@ export function AppSidebar() {
               <span>Switch Role (Demo)</span>
             </button>
             {showRoleSwitcher && (
-              <div className="absolute bottom-full left-0 w-full mb-1 rounded-md bg-sidebar-accent border border-sidebar-border p-1 shadow-lg">
+              <div className="absolute bottom-full left-0 w-full mb-1 rounded-md bg-sidebar-accent border border-sidebar-border p-1 shadow-lg z-50">
                 {roles.map(role => (
                   <button
                     key={role}
