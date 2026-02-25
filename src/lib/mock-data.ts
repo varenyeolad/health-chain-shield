@@ -1,0 +1,162 @@
+import type { RecordMeta, ConsentPolicy, AccessLogEntry, LedgerEvent, Organization, User } from "@/types/medical";
+
+export const mockUser: User = {
+  id: "pat-001",
+  name: "Sarah Chen",
+  email: "sarah.chen@email.com",
+  role: "patient",
+};
+
+export const mockUsers: Record<string, User> = {
+  patient: { id: "pat-001", name: "Sarah Chen", email: "sarah.chen@email.com", role: "patient" },
+  provider: { id: "prov-001", name: "Dr. James Wilson", email: "j.wilson@mercy.org", role: "provider", orgId: "org-001", orgName: "Mercy General Hospital" },
+  consumer: { id: "con-001", name: "Dr. Lisa Park", email: "l.park@metro.org", role: "consumer", orgId: "org-002", orgName: "Metro Health Network" },
+  regulator: { id: "reg-001", name: "Robert Hayes", email: "r.hayes@hhs.gov", role: "regulator", orgId: "org-003", orgName: "Health Oversight Agency" },
+  admin: { id: "adm-001", name: "System Admin", email: "admin@medchain.io", role: "admin" },
+};
+
+export const mockOrganizations: Organization[] = [
+  { id: "org-001", name: "Mercy General Hospital", type: "hospital", verified: true, node_status: "active" },
+  { id: "org-002", name: "Metro Health Network", type: "clinic", verified: true, node_status: "active" },
+  { id: "org-003", name: "Health Oversight Agency", type: "regulator", verified: true, node_status: "active" },
+  { id: "org-004", name: "BioGenomics Lab", type: "lab", verified: true, node_status: "syncing" },
+  { id: "org-005", name: "CareFirst Insurance", type: "insurer", verified: false, node_status: "offline" },
+];
+
+export const mockRecords: RecordMeta[] = [
+  {
+    record_id: "rec-a1b2c3",
+    patient_id: "pat-001",
+    owner_id: "prov-001",
+    owner_org: "Mercy General Hospital",
+    type: "lab_result",
+    title: "Complete Blood Count (CBC)",
+    created_at: "2025-12-15T09:30:00Z",
+    hash_offchain: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    uri_offchain: "ipfs://QmXk8fLc...",
+    status: "COMMITTED",
+    fhir_resource: "DiagnosticReport",
+    tags: ["routine", "annual"],
+  },
+  {
+    record_id: "rec-d4e5f6",
+    patient_id: "pat-001",
+    owner_id: "prov-001",
+    owner_org: "Mercy General Hospital",
+    type: "imaging",
+    title: "Chest X-Ray (PA/Lateral)",
+    created_at: "2025-11-28T14:15:00Z",
+    hash_offchain: "sha256:7d793037a0760186574b0282f2f435e7cee592c2e6cd23e9c04f1a3",
+    uri_offchain: "ipfs://QmYp9dHn...",
+    status: "COMMITTED",
+    fhir_resource: "ImagingStudy",
+    tags: ["emergency"],
+  },
+  {
+    record_id: "rec-g7h8i9",
+    patient_id: "pat-001",
+    owner_id: "prov-002",
+    owner_org: "Metro Health Network",
+    type: "clinical_note",
+    title: "Follow-up Consultation Note",
+    created_at: "2026-01-10T11:00:00Z",
+    hash_offchain: "sha256:abc123def456789abc123def456789abc123def456789abc12",
+    uri_offchain: "ipfs://QmZr7eFp...",
+    status: "COMMITTED",
+    fhir_resource: "DocumentReference",
+  },
+  {
+    record_id: "rec-j1k2l3",
+    patient_id: "pat-001",
+    owner_id: "prov-001",
+    owner_org: "Mercy General Hospital",
+    type: "prescription",
+    title: "Lisinopril 10mg Daily",
+    created_at: "2026-02-01T16:45:00Z",
+    hash_offchain: "sha256:def789ghi012345def789ghi012345def789ghi012345def78",
+    uri_offchain: "ipfs://QmAb3cDe...",
+    status: "PENDING_ENDORSEMENT",
+    fhir_resource: "MedicationRequest",
+  },
+  {
+    record_id: "rec-m4n5o6",
+    patient_id: "pat-001",
+    owner_id: "prov-001",
+    owner_org: "Mercy General Hospital",
+    type: "immunization",
+    title: "COVID-19 Booster (Moderna)",
+    created_at: "2026-02-20T10:00:00Z",
+    hash_offchain: "sha256:999888777666555444333222111000999888777666555444",
+    uri_offchain: "ipfs://QmFg4hIj...",
+    status: "COMMITTED",
+    fhir_resource: "Immunization",
+    tags: ["vaccination"],
+  },
+];
+
+export const mockConsents: ConsentPolicy[] = [
+  {
+    policy_id: "cns-001",
+    patient_id: "pat-001",
+    grantee_id: "org-002",
+    grantee_org: "Metro Health Network",
+    data_scope: { types: ["lab_result", "clinical_note"], from: "2025-01-01", to: "2026-06-30" },
+    purpose: "Continuity of care — referral follow-up",
+    valid_from: "2025-06-01T00:00:00Z",
+    valid_to: "2026-06-30T23:59:59Z",
+    status: "ACTIVE",
+    created_at: "2025-06-01T10:00:00Z",
+  },
+  {
+    policy_id: "cns-002",
+    patient_id: "pat-001",
+    grantee_id: "org-004",
+    grantee_org: "BioGenomics Lab",
+    data_scope: { types: ["lab_result"] },
+    purpose: "Genomic research study participation",
+    valid_from: "2025-09-15T00:00:00Z",
+    valid_to: "2026-03-15T23:59:59Z",
+    status: "ACTIVE",
+    created_at: "2025-09-15T08:00:00Z",
+  },
+  {
+    policy_id: "cns-003",
+    patient_id: "pat-001",
+    grantee_id: "org-005",
+    grantee_org: "CareFirst Insurance",
+    data_scope: { types: ["discharge_summary", "prescription"] },
+    purpose: "Claims processing",
+    valid_from: "2025-03-01T00:00:00Z",
+    valid_to: "2025-12-31T23:59:59Z",
+    status: "EXPIRED",
+    created_at: "2025-03-01T09:00:00Z",
+  },
+  {
+    policy_id: "cns-004",
+    patient_id: "pat-001",
+    grantee_id: "org-002",
+    grantee_org: "Metro Health Network",
+    data_scope: { types: ["imaging"] },
+    purpose: "Second opinion on chest imaging",
+    valid_from: "2026-02-10T00:00:00Z",
+    valid_to: "2026-04-10T23:59:59Z",
+    status: "PENDING",
+    created_at: "2026-02-10T14:00:00Z",
+  },
+];
+
+export const mockAuditLog: AccessLogEntry[] = [
+  { access_id: "acc-001", record_id: "rec-a1b2c3", record_title: "Complete Blood Count (CBC)", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-20T14:30:00Z", purpose: "Referral follow-up", action: "VIEW", consent_id: "cns-001" },
+  { access_id: "acc-002", record_id: "rec-g7h8i9", record_title: "Follow-up Consultation Note", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-19T09:15:00Z", purpose: "Referral follow-up", action: "DOWNLOAD", consent_id: "cns-001" },
+  { access_id: "acc-003", record_id: "rec-a1b2c3", record_title: "Complete Blood Count (CBC)", grantee_id: "org-004", grantee_org: "BioGenomics Lab", timestamp: "2026-02-18T11:00:00Z", purpose: "Research study", action: "VIEW", consent_id: "cns-002" },
+  { access_id: "acc-004", record_id: "rec-d4e5f6", record_title: "Chest X-Ray (PA/Lateral)", grantee_id: "org-001", grantee_org: "Mercy General Hospital", timestamp: "2026-02-17T16:45:00Z", purpose: "Clinical review", action: "VERIFY" },
+  { access_id: "acc-005", record_id: "rec-m4n5o6", record_title: "COVID-19 Booster (Moderna)", grantee_id: "org-001", grantee_org: "Mercy General Hospital", timestamp: "2026-02-15T10:30:00Z", purpose: "Vaccination record", action: "VIEW" },
+];
+
+export const mockLedgerEvents: LedgerEvent[] = [
+  { event_id: "evt-001", type: "RECORD_REGISTERED", actor: "Dr. James Wilson", actor_org: "Mercy General Hospital", target_id: "rec-m4n5o6", timestamp: "2026-02-20T10:00:00Z", description: "Immunization record registered on ledger", tx_hash: "0xabc123...def456", block_number: 48291 },
+  { event_id: "evt-002", type: "ACCESS_LOGGED", actor: "Metro Health Network", actor_org: "Metro Health Network", target_id: "rec-a1b2c3", timestamp: "2026-02-20T14:30:00Z", description: "Lab result accessed under consent cns-001", tx_hash: "0x789abc...123def", block_number: 48295 },
+  { event_id: "evt-003", type: "CONSENT_GRANTED", actor: "Sarah Chen", actor_org: "Patient", target_id: "cns-002", timestamp: "2025-09-15T08:00:00Z", description: "Consent granted to BioGenomics Lab for lab results", tx_hash: "0x456def...789abc", block_number: 42100 },
+  { event_id: "evt-004", type: "CONSENT_REVOKED", actor: "Sarah Chen", actor_org: "Patient", target_id: "cns-003", timestamp: "2025-12-31T23:59:59Z", description: "Consent expired for CareFirst Insurance", tx_hash: "0xdef789...abc123", block_number: 46500 },
+  { event_id: "evt-005", type: "RECORD_VERIFIED", actor: "System", actor_org: "MedChain", target_id: "rec-d4e5f6", timestamp: "2026-02-17T16:45:00Z", description: "Hash verification passed for Chest X-Ray", tx_hash: "0x123456...789abc", block_number: 47800 },
+];
