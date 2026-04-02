@@ -6,15 +6,11 @@ import {
   LayoutDashboard, FileText, Shield, ScrollText, Share2, Key,
   Users, Inbox, Settings2, Search, Download,
   Building2, Network, BookOpen, UserCog,
-  ChevronLeft, LogOut, Repeat, Settings, HelpCircle,
+  ChevronLeft, LogOut, Repeat, Settings, HelpCircle, Zap,
 } from "lucide-react";
 import { useState } from "react";
 
-interface NavItem {
-  title: string;
-  path: string;
-  icon: React.ElementType;
-}
+interface NavItem { title: string; path: string; icon: React.ElementType; }
 
 const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   patient: [
@@ -31,6 +27,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { title: "Requests", path: "/provider/requests", icon: Inbox },
     { title: "Audit Log", path: "/provider/audit", icon: ScrollText },
     { title: "Integrations", path: "/provider/integrations", icon: Settings2 },
+    { title: "Emergency", path: "/emergency-access", icon: Zap },
   ],
   consumer: [
     { title: "Dashboard", path: "/consumer/dashboard", icon: LayoutDashboard },
@@ -38,6 +35,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { title: "Request Access", path: "/consumer/request-access", icon: Shield },
     { title: "Retrieve", path: "/consumer/retrieve", icon: Download },
     { title: "Audit Log", path: "/consumer/audit", icon: ScrollText },
+    { title: "Emergency", path: "/emergency-access", icon: Zap },
   ],
   regulator: [
     { title: "Dashboard", path: "/regulator/dashboard", icon: LayoutDashboard },
@@ -82,7 +80,6 @@ export function AppSidebar() {
       "flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 shrink-0",
       collapsed ? "w-16" : "w-60"
     )}>
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
         {!collapsed && (
           <div className="flex items-center gap-2">
@@ -95,50 +92,32 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
-        >
+        <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
           <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
         </button>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {items.map(item => {
           const isActive = location.pathname === item.path || (item.path === "/patient/consents" && location.pathname.startsWith("/patient/consents/"));
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
+            <Link key={item.path} to={item.path} className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              isActive ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}>
               <item.icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.title}</span>}
             </Link>
           );
         })}
-
-        {/* Divider + Global nav */}
         <div className="my-2 border-t border-sidebar-border" />
         {GLOBAL_NAV.map(item => {
           const isActive = location.pathname === item.path;
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
+            <Link key={item.path} to={item.path} className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              isActive ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}>
               <item.icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.title}</span>}
             </Link>
@@ -146,39 +125,24 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Role switcher (demo) */}
       <div className="p-2 border-t border-sidebar-border">
         {!collapsed && (
           <div className="relative">
-            <button
-              onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
-              className="flex items-center gap-2 w-full rounded-md px-3 py-2 text-xs text-sidebar-muted hover:bg-sidebar-accent transition-colors"
-            >
-              <Repeat className="h-3 w-3" />
-              <span>Switch Role (Demo)</span>
+            <button onClick={() => setShowRoleSwitcher(!showRoleSwitcher)} className="flex items-center gap-2 w-full rounded-md px-3 py-2 text-xs text-sidebar-muted hover:bg-sidebar-accent transition-colors">
+              <Repeat className="h-3 w-3" /><span>Switch Role (Demo)</span>
             </button>
             {showRoleSwitcher && (
               <div className="absolute bottom-full left-0 w-full mb-1 rounded-md bg-sidebar-accent border border-sidebar-border p-1 shadow-lg z-50">
                 {roles.map(role => (
-                  <button
-                    key={role}
-                    onClick={() => { switchRole(role); setShowRoleSwitcher(false); }}
-                    className={cn(
-                      "w-full text-left rounded px-3 py-1.5 text-xs transition-colors",
-                      user.role === role
-                        ? "text-sidebar-primary bg-sidebar-accent"
-                        : "text-sidebar-foreground hover:bg-sidebar-border"
-                    )}
-                  >
-                    {ROLE_LABELS[role]}
-                  </button>
+                  <button key={role} onClick={() => { switchRole(role); setShowRoleSwitcher(false); }} className={cn(
+                    "w-full text-left rounded px-3 py-1.5 text-xs transition-colors",
+                    user.role === role ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:bg-sidebar-border"
+                  )}>{ROLE_LABELS[role]}</button>
                 ))}
               </div>
             )}
           </div>
         )}
-
-        {/* User */}
         <div className="flex items-center gap-2 px-3 py-2">
           <div className="h-7 w-7 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-medium text-sidebar-primary shrink-0">
             {user.name.split(" ").map(n => n[0]).join("")}
