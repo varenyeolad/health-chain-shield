@@ -103,6 +103,7 @@ export const mockConsents: ConsentPolicy[] = [
   },
 ];
 
+// Extended audit log with richer data for role-specific views
 export const mockAuditLog: AccessLogEntry[] = [
   { access_id: "acc-001", record_id: "rec-a1b2c3", record_title: "Complete Blood Count (CBC)", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-20T14:30:00Z", purpose: "Referral follow-up", action: "VIEW", consent_id: "cns-001" },
   { access_id: "acc-002", record_id: "rec-g7h8i9", record_title: "Follow-up Consultation Note", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-19T09:15:00Z", purpose: "Referral follow-up", action: "DOWNLOAD", consent_id: "cns-001" },
@@ -111,6 +112,12 @@ export const mockAuditLog: AccessLogEntry[] = [
   { access_id: "acc-005", record_id: "rec-m4n5o6", record_title: "COVID-19 Booster (Moderna)", grantee_id: "org-001", grantee_org: "Mercy General Hospital", timestamp: "2026-02-15T10:30:00Z", purpose: "Vaccination record", action: "VIEW" },
   { access_id: "acc-006", record_id: "rec-a1b2c3", record_title: "Complete Blood Count (CBC)", grantee_id: "org-006", grantee_org: "City Medical Center", timestamp: "2026-02-14T02:15:00Z", purpose: "Emergency access", action: "VIEW", consent_id: "cns-005" },
   { access_id: "acc-007", record_id: "rec-j1k2l3", record_title: "Lisinopril 10mg Daily", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-13T22:45:00Z", purpose: "Medication review", action: "DOWNLOAD" },
+  // Additional entries for richer audit
+  { access_id: "acc-008", record_id: "rec-a1b2c3", record_title: "Complete Blood Count (CBC)", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-12T03:20:00Z", purpose: "Follow-up", action: "VIEW", consent_id: "cns-001" },
+  { access_id: "acc-009", record_id: "rec-d4e5f6", record_title: "Chest X-Ray (PA/Lateral)", grantee_id: "org-006", grantee_org: "City Medical Center", timestamp: "2026-02-11T23:55:00Z", purpose: "Emergency consult", action: "VIEW", consent_id: "cns-005" },
+  { access_id: "acc-010", record_id: "rec-m4n5o6", record_title: "COVID-19 Booster (Moderna)", grantee_id: "org-004", grantee_org: "BioGenomics Lab", timestamp: "2026-02-10T08:00:00Z", purpose: "Research inclusion", action: "VERIFY", consent_id: "cns-002" },
+  { access_id: "acc-011", record_id: "rec-p7q8r9", record_title: "Lipid Panel", grantee_id: "org-002", grantee_org: "Metro Health Network", timestamp: "2026-02-09T15:00:00Z", purpose: "Referral", action: "VIEW" },
+  { access_id: "acc-012", record_id: "rec-a1b2c3", record_title: "Complete Blood Count (CBC)", grantee_id: "org-004", grantee_org: "BioGenomics Lab", timestamp: "2026-02-08T04:10:00Z", purpose: "After-hours research batch", action: "DOWNLOAD", consent_id: "cns-002" },
 ];
 
 export const mockLedgerEvents: LedgerEvent[] = [
@@ -261,3 +268,158 @@ export const mockShareLinks: ShareLink[] = [
   { id: "shr-001", scope_types: ["lab_result"], purpose: "Share with specialist", expires_at: "2026-03-01T00:00:00Z", created_at: "2026-02-20T10:00:00Z", accessCount: 1, active: true, isEmergency: false, url: "https://medchain.io/s/abc123" },
   { id: "shr-002", scope_types: ["lab_result", "imaging", "prescription"], purpose: "Emergency access", expires_at: "2026-02-26T00:00:00Z", created_at: "2026-02-24T18:00:00Z", accessCount: 0, active: true, isEmergency: true, url: "https://medchain.io/s/def456" },
 ];
+
+// ====== NEW: Anomaly / Compliance Data ======
+
+export interface AnomalyEvent {
+  id: string;
+  type: "after_hours" | "excessive_access" | "consent_mismatch" | "hash_mismatch" | "emergency_override" | "failed_attempt" | "outside_validity";
+  severity: "low" | "medium" | "high" | "critical";
+  org: string;
+  description: string;
+  timestamp: string;
+  resolved: boolean;
+  record_id?: string;
+  access_id?: string;
+}
+
+export const mockAnomalies: AnomalyEvent[] = [
+  { id: "anom-001", type: "after_hours", severity: "medium", org: "City Medical Center", description: "Access to CBC results at 02:15 AM outside standard hours", timestamp: "2026-02-14T02:15:00Z", resolved: false, record_id: "rec-a1b2c3", access_id: "acc-006" },
+  { id: "anom-002", type: "after_hours", severity: "low", org: "Metro Health Network", description: "Download of prescription data at 22:45 PM", timestamp: "2026-02-13T22:45:00Z", resolved: true, record_id: "rec-j1k2l3", access_id: "acc-007" },
+  { id: "anom-003", type: "excessive_access", severity: "high", org: "BioGenomics Lab", description: "12 retrievals in 24 hours from single organization", timestamp: "2026-02-08T04:10:00Z", resolved: false, access_id: "acc-012" },
+  { id: "anom-004", type: "emergency_override", severity: "high", org: "City Medical Center", description: "Emergency break-glass access invoked without prior consent", timestamp: "2026-01-20T03:00:00Z", resolved: true },
+  { id: "anom-005", type: "hash_mismatch", severity: "critical", org: "CareFirst Insurance", description: "Hash verification failed during retrieval — possible data tampering", timestamp: "2026-01-18T10:30:00Z", resolved: false, record_id: "rec-d4e5f6" },
+  { id: "anom-006", type: "consent_mismatch", severity: "high", org: "Metro Health Network", description: "Access attempt for imaging records not covered by active consent scope", timestamp: "2026-02-05T14:00:00Z", resolved: true },
+  { id: "anom-007", type: "failed_attempt", severity: "medium", org: "CareFirst Insurance", description: "3 consecutive failed retrieval attempts in 10 minutes", timestamp: "2026-02-02T11:20:00Z", resolved: true },
+  { id: "anom-008", type: "outside_validity", severity: "high", org: "CareFirst Insurance", description: "Access attempted using expired consent cns-003", timestamp: "2026-01-05T09:00:00Z", resolved: true },
+];
+
+export interface ComplianceCheck {
+  id: string;
+  rule: string;
+  description: string;
+  status: "pass" | "fail" | "warning";
+  details: string;
+  category: "consent" | "access" | "data_integrity" | "audit";
+}
+
+export const mockComplianceChecks: ComplianceCheck[] = [
+  { id: "chk-001", rule: "Consent before access", description: "All accesses must have a valid consent policy", status: "warning", details: "2 accesses found without linked consent ID in last 30 days", category: "consent" },
+  { id: "chk-002", rule: "Active consent status", description: "Consent must be ACTIVE at time of access", status: "fail", details: "1 access attempted on expired consent cns-003", category: "consent" },
+  { id: "chk-003", rule: "Purpose alignment", description: "Access purpose must match consent policy purpose", status: "pass", details: "All purposes align with policy definitions", category: "access" },
+  { id: "chk-004", rule: "Retrieval logging", description: "Every successful retrieval must be logged on ledger", status: "pass", details: "100% audit completeness in last 30 days", category: "audit" },
+  { id: "chk-005", rule: "Revocation enforcement", description: "Revoked consents must block all new access", status: "pass", details: "No access after revocation detected", category: "consent" },
+  { id: "chk-006", rule: "Record metadata completeness", description: "All records must have hash, URI, owner, and type", status: "warning", details: "1 record missing FHIR resource mapping", category: "data_integrity" },
+  { id: "chk-007", rule: "Hash integrity verification", description: "All retrieved records must pass hash verification", status: "fail", details: "1 hash mismatch incident detected (rec-d4e5f6)", category: "data_integrity" },
+  { id: "chk-008", rule: "After-hours access policy", description: "Accesses outside 06:00–22:00 require justification", status: "warning", details: "3 after-hours accesses, 1 lacks emergency justification", category: "access" },
+];
+
+export interface OrgComplianceScore {
+  org: string;
+  orgId: string;
+  score: number;
+  issues: number;
+  status: "compliant" | "warning" | "non-compliant";
+  lastAudit: string;
+  accessCount: number;
+  anomalyCount: number;
+}
+
+export const mockOrgCompliance: OrgComplianceScore[] = [
+  { org: "Mercy General Hospital", orgId: "org-001", score: 98, issues: 0, status: "compliant", lastAudit: "2026-02-25T00:00:00Z", accessCount: 45, anomalyCount: 0 },
+  { org: "Metro Health Network", orgId: "org-002", score: 92, issues: 2, status: "compliant", lastAudit: "2026-02-24T00:00:00Z", accessCount: 78, anomalyCount: 2 },
+  { org: "BioGenomics Lab", orgId: "org-004", score: 84, issues: 3, status: "warning", lastAudit: "2026-02-23T00:00:00Z", accessCount: 32, anomalyCount: 3 },
+  { org: "CareFirst Insurance", orgId: "org-005", score: 65, issues: 6, status: "non-compliant", lastAudit: "2026-02-22T00:00:00Z", accessCount: 15, anomalyCount: 5 },
+  { org: "City Medical Center", orgId: "org-006", score: 88, issues: 1, status: "warning", lastAudit: "2026-02-21T00:00:00Z", accessCount: 22, anomalyCount: 1 },
+  { org: "National Research Institute", orgId: "org-007", score: 100, issues: 0, status: "compliant", lastAudit: "2026-02-20T00:00:00Z", accessCount: 8, anomalyCount: 0 },
+];
+
+// ====== NEW: Emergency Access Log ======
+export interface EmergencyAccessEvent {
+  id: string;
+  requester_org: string;
+  requester_name: string;
+  patient_pseudonym: string;
+  reason: string;
+  records_accessed: string[];
+  timestamp: string;
+  expires_at: string;
+  status: "active" | "expired" | "revoked";
+  post_audit_complete: boolean;
+}
+
+export const mockEmergencyAccess: EmergencyAccessEvent[] = [
+  { id: "emg-001", requester_org: "City Medical Center", requester_name: "Dr. Anna Kim", patient_pseudonym: "PAT-A7X9K2", reason: "Patient arrived unconscious in ER, need medication history", records_accessed: ["rec-j1k2l3", "rec-a1b2c3"], timestamp: "2026-01-20T03:00:00Z", expires_at: "2026-01-23T03:00:00Z", status: "expired", post_audit_complete: true },
+  { id: "emg-002", requester_org: "Metro Health Network", requester_name: "Dr. Lisa Park", patient_pseudonym: "PAT-B3M8N1", reason: "Urgent surgical preparation — need allergy list", records_accessed: ["rec-s1t2u3"], timestamp: "2026-02-15T06:30:00Z", expires_at: "2026-02-18T06:30:00Z", status: "expired", post_audit_complete: false },
+];
+
+// ====== NEW: FHIR Mapping Data ======
+export interface FhirMapping {
+  recordType: string;
+  fhirResource: string;
+  mappingStatus: "mapped" | "partial" | "missing" | "validation_failed";
+  fieldsCovered: number;
+  totalFields: number;
+  lastValidated: string;
+  issues?: string[];
+}
+
+export const mockFhirMappings: FhirMapping[] = [
+  { recordType: "lab_result", fhirResource: "DiagnosticReport", mappingStatus: "mapped", fieldsCovered: 14, totalFields: 14, lastValidated: "2026-02-25T00:00:00Z" },
+  { recordType: "imaging", fhirResource: "ImagingStudy", mappingStatus: "mapped", fieldsCovered: 11, totalFields: 12, lastValidated: "2026-02-24T00:00:00Z", issues: ["modality code missing for 2 records"] },
+  { recordType: "clinical_note", fhirResource: "DocumentReference", mappingStatus: "partial", fieldsCovered: 8, totalFields: 10, lastValidated: "2026-02-23T00:00:00Z", issues: ["author.reference not mapped", "category code incomplete"] },
+  { recordType: "prescription", fhirResource: "MedicationRequest", mappingStatus: "mapped", fieldsCovered: 16, totalFields: 16, lastValidated: "2026-02-25T00:00:00Z" },
+  { recordType: "discharge_summary", fhirResource: "Composition", mappingStatus: "missing", fieldsCovered: 0, totalFields: 12, lastValidated: "2026-02-20T00:00:00Z", issues: ["No FHIR profile defined", "Awaiting template creation"] },
+  { recordType: "immunization", fhirResource: "Immunization", mappingStatus: "mapped", fieldsCovered: 9, totalFields: 9, lastValidated: "2026-02-25T00:00:00Z" },
+  { recordType: "allergy_list", fhirResource: "AllergyIntolerance", mappingStatus: "validation_failed", fieldsCovered: 7, totalFields: 8, lastValidated: "2026-02-22T00:00:00Z", issues: ["criticality enum mismatch with FHIR R4 spec"] },
+  { recordType: "referral", fhirResource: "ServiceRequest", mappingStatus: "partial", fieldsCovered: 5, totalFields: 10, lastValidated: "2026-02-21T00:00:00Z", issues: ["intent not mapped", "requester missing", "priority not mapped", "occurrence not mapped", "performer not mapped"] },
+];
+
+// ====== NEW: Notification Data ======
+export interface AppNotification {
+  id: string;
+  type: "consent_request" | "consent_approved" | "consent_revoked" | "emergency_access" | "record_added" | "retrieval_complete" | "export_complete" | "suspicious_activity" | "system";
+  title: string;
+  description: string;
+  timestamp: string;
+  read: boolean;
+  severity: "info" | "warning" | "critical";
+  actionUrl?: string;
+}
+
+export const mockNotifications: AppNotification[] = [
+  { id: "notif-001", type: "consent_request", title: "New consent request", description: "Metro Health Network is requesting access to your imaging records.", timestamp: "2026-02-10T14:00:00Z", read: false, severity: "info", actionUrl: "/patient/consents" },
+  { id: "notif-002", type: "record_added", title: "New record registered", description: "COVID-19 Booster (Moderna) was anchored on the immutable ledger by Mercy General Hospital.", timestamp: "2026-02-20T10:00:00Z", read: true, severity: "info" },
+  { id: "notif-003", type: "suspicious_activity", title: "After-hours access detected", description: "Your CBC results were accessed at 02:15 AM by City Medical Center.", timestamp: "2026-02-14T02:15:00Z", read: false, severity: "warning", actionUrl: "/patient/audit" },
+  { id: "notif-004", type: "emergency_access", title: "Emergency access used", description: "City Medical Center invoked emergency access to your records on Jan 20.", timestamp: "2026-01-20T03:00:00Z", read: true, severity: "critical", actionUrl: "/patient/audit" },
+  { id: "notif-005", type: "consent_revoked", title: "Consent revoked", description: "Your consent for City Medical Center has been revoked.", timestamp: "2026-01-15T00:00:00Z", read: true, severity: "info" },
+  { id: "notif-006", type: "retrieval_complete", title: "Record retrieved", description: "Metro Health Network successfully retrieved your Follow-up Consultation Note.", timestamp: "2026-02-19T09:15:00Z", read: false, severity: "info" },
+  { id: "notif-007", type: "system", title: "Off-chain storage degraded", description: "IPFS storage is experiencing intermittent issues. Records may take longer to retrieve.", timestamp: "2026-02-25T11:55:00Z", read: false, severity: "warning" },
+];
+
+// ====== NEW: Evaluation Metrics ======
+export interface SystemMetrics {
+  avgRegistrationTime: string;
+  avgConsentApprovalTime: string;
+  avgRetrievalLatency: string;
+  failedRequestRate: string;
+  auditLogCompleteness: string;
+  anomalyDetectionCount: number;
+  simulatedThroughput: string;
+  totalRecords: number;
+  totalConsents: number;
+  totalAuditEvents: number;
+}
+
+export const mockMetrics: SystemMetrics = {
+  avgRegistrationTime: "4.2s",
+  avgConsentApprovalTime: "2.1h",
+  avgRetrievalLatency: "3.8s",
+  failedRequestRate: "2.3%",
+  auditLogCompleteness: "99.7%",
+  anomalyDetectionCount: 8,
+  simulatedThroughput: "142 tx/s",
+  totalRecords: 1847,
+  totalConsents: 523,
+  totalAuditEvents: 12480,
+};
