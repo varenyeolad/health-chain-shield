@@ -10,6 +10,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import SelectOrg from "./pages/SelectOrg";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
+import EmergencyAccess from "./pages/EmergencyAccess";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientRecords from "./pages/patient/PatientRecords";
 import PatientConsents from "./pages/patient/PatientConsents";
@@ -21,11 +22,13 @@ import ProviderDashboard from "./pages/provider/ProviderDashboard";
 import ProviderPatients from "./pages/provider/ProviderPatients";
 import ProviderPatientRecords from "./pages/provider/ProviderPatientRecords";
 import ProviderRequests from "./pages/provider/ProviderRequests";
+import ProviderAudit from "./pages/provider/ProviderAudit";
 import ProviderIntegrations from "./pages/provider/ProviderIntegrations";
 import ConsumerDashboard from "./pages/consumer/ConsumerDashboard";
 import ConsumerPatientSearch from "./pages/consumer/ConsumerPatientSearch";
 import ConsumerRequestAccess from "./pages/consumer/ConsumerRequestAccess";
 import ConsumerRetrieve from "./pages/consumer/ConsumerRetrieve";
+import ConsumerAudit from "./pages/consumer/ConsumerAudit";
 import RegulatorDashboard from "./pages/regulator/RegulatorDashboard";
 import RegulatorAudit from "./pages/regulator/RegulatorAudit";
 import RegulatorCompliance from "./pages/regulator/RegulatorCompliance";
@@ -55,9 +58,9 @@ function AppRoutes() {
       <Route path="/" element={isAuthenticated ? <Navigate to="/patient/dashboard" replace /> : <Navigate to="/login" replace />} />
 
       <Route element={<AuthGate><AppShell /></AuthGate>}>
-        {/* Global */}
         <Route path="/settings" element={<Settings />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/emergency-access" element={<EmergencyAccess />} />
 
         {/* Patient */}
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
@@ -73,7 +76,7 @@ function AppRoutes() {
         <Route path="/provider/patients" element={<ProviderPatients />} />
         <Route path="/provider/patient/:id/records" element={<ProviderPatientRecords />} />
         <Route path="/provider/requests" element={<ProviderRequests />} />
-        <Route path="/provider/audit" element={<PatientAudit />} />
+        <Route path="/provider/audit" element={<ProviderAudit />} />
         <Route path="/provider/integrations" element={<ProviderIntegrations />} />
 
         {/* Consumer */}
@@ -81,7 +84,7 @@ function AppRoutes() {
         <Route path="/consumer/patient-search" element={<ConsumerPatientSearch />} />
         <Route path="/consumer/request-access" element={<ConsumerRequestAccess />} />
         <Route path="/consumer/retrieve" element={<ConsumerRetrieve />} />
-        <Route path="/consumer/audit" element={<PatientAudit />} />
+        <Route path="/consumer/audit" element={<ConsumerAudit />} />
 
         {/* Regulator */}
         <Route path="/regulator/dashboard" element={<RegulatorDashboard />} />
