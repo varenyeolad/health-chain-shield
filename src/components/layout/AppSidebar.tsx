@@ -2,13 +2,15 @@ import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types/medical";
 import { cn } from "@/lib/utils";
+import { getDefaultRoute } from "@/lib/permissions";
 import {
   LayoutDashboard, FileText, Shield, ScrollText, Share2, Key,
   Users, Inbox, Settings2, Search, Download,
-  Building2, Network, BookOpen, UserCog,
-  ChevronLeft, LogOut, Repeat, Settings, HelpCircle, Zap,
+  Building2, Network, BookOpen, UserCog, BarChart3,
+  ChevronLeft, LogOut, Repeat, Settings, HelpCircle, Zap, Stethoscope,
 } from "lucide-react";
 import { useState } from "react";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface NavItem { title: string; path: string; icon: React.ElementType; }
 
@@ -27,6 +29,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { title: "Requests", path: "/provider/requests", icon: Inbox },
     { title: "Audit Log", path: "/provider/audit", icon: ScrollText },
     { title: "Integrations", path: "/provider/integrations", icon: Settings2 },
+    { title: "FHIR Center", path: "/provider/fhir", icon: Stethoscope },
     { title: "Emergency", path: "/emergency-access", icon: Zap },
   ],
   consumer: [
@@ -48,6 +51,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { title: "Network", path: "/admin/network", icon: Network },
     { title: "Policies", path: "/admin/policies", icon: BookOpen },
     { title: "Users", path: "/admin/users", icon: UserCog },
+    { title: "Metrics", path: "/admin/metrics", icon: BarChart3 },
   ],
 };
 
@@ -75,6 +79,12 @@ export function AppSidebar() {
   const items = NAV_ITEMS[user.role];
   const roles: UserRole[] = ["patient", "provider", "consumer", "regulator", "admin"];
 
+  const handleSwitchRole = (role: UserRole) => {
+    switchRole(role);
+    setShowRoleSwitcher(false);
+    // Navigation happens via redirect in App.tsx
+  };
+
   return (
     <aside className={cn(
       "flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 shrink-0",
@@ -92,9 +102,12 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
-          <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
-        </button>
+        <div className="flex items-center gap-1">
+          {!collapsed && <NotificationCenter />}
+          <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
+            <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
+          </button>
+        </div>
       </div>
 
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
@@ -134,7 +147,7 @@ export function AppSidebar() {
             {showRoleSwitcher && (
               <div className="absolute bottom-full left-0 w-full mb-1 rounded-md bg-sidebar-accent border border-sidebar-border p-1 shadow-lg z-50">
                 {roles.map(role => (
-                  <button key={role} onClick={() => { switchRole(role); setShowRoleSwitcher(false); }} className={cn(
+                  <button key={role} onClick={() => handleSwitchRole(role)} className={cn(
                     "w-full text-left rounded px-3 py-1.5 text-xs transition-colors",
                     user.role === role ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:bg-sidebar-border"
                   )}>{ROLE_LABELS[role]}</button>
