@@ -185,7 +185,7 @@ export default function AdminMetrics() {
         </div>
       </div>
 
-      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} title="Export Evaluation Report" description="Export system evaluation metrics and compliance data." />
+      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} title="Export Evaluation Report" />
     </div>
   );
 }
