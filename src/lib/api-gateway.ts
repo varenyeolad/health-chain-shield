@@ -17,50 +17,27 @@ export interface ApiResponse<T> {
   traceId?: string;
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 export interface IMedChainGateway {
-  // Auth
   login(email: string, password: string): Promise<ApiResponse<{ user: any; token: string }>>;
-
-  // Records
   getRecords(params?: { patientId?: string; type?: string; status?: string }): Promise<ApiResponse<RecordMeta[]>>;
   getRecord(recordId: string): Promise<ApiResponse<RecordMeta | null>>;
   registerRecord(data: { patientId: string; type: string; title: string; file?: File }): Promise<ApiResponse<{ recordId: string; hash: string; uri: string; status: RecordStatus }>>;
   advanceRecordStatus(recordId: string, currentStatus: RecordStatus): Promise<ApiResponse<RecordStatus>>;
-
-  // Consents
   getConsents(patientId: string): Promise<ApiResponse<ConsentPolicy[]>>;
   getConsent(policyId: string): Promise<ApiResponse<ConsentPolicy | null>>;
   grantConsent(requestId: string): Promise<ApiResponse<{ policyId: string; receipt: TransactionReceipt }>>;
   revokeConsent(policyId: string): Promise<ApiResponse<{ receipt: TransactionReceipt }>>;
-
-  // Verification
   verifyRecord(recordId: string): Promise<ApiResponse<VerificationData>>;
   getTransactionReceipt(txHash: string): Promise<ApiResponse<TransactionReceipt>>;
-
-  // Access
   getAccessRequests(patientId?: string): Promise<ApiResponse<any[]>>;
   createAccessRequest(data: { patientPseudonym: string; scopeTypes: string[]; purpose: string; urgency: string }): Promise<ApiResponse<{ requestId: string }>>;
   retrieveRecord(recordId: string): Promise<ApiResponse<{ verified: boolean; receipt: TransactionReceipt }>>;
-
-  // Audit
   getAuditLog(filters?: { patientId?: string; orgId?: string; from?: string; to?: string }): Promise<ApiResponse<AccessLogEntry[]>>;
   getLedgerEvents(): Promise<ApiResponse<LedgerEvent[]>>;
-
-  // Organizations
   getOrganizations(): Promise<ApiResponse<any[]>>;
   addOrganization(data: { name: string; type: string }): Promise<ApiResponse<{ id: string }>>;
-
-  // Admin
   getAdminUsers(): Promise<ApiResponse<any[]>>;
   inviteUser(data: { name: string; email: string; role: string; orgId: string }): Promise<ApiResponse<{ userId: string }>>;
-
-  // System
   getSystemHealth(): Promise<ApiResponse<{ degraded: string[]; healthy: string[] }>>;
   setFailureRate(rate: number): void;
 }
@@ -68,18 +45,18 @@ export interface IMedChainGateway {
 // =================== Mock Implementation ===================
 
 import { api } from "./mock-api";
-import { mockOrganizations, mockLedgerEvents } from "./mock-data";
+import { mockOrganizations } from "./mock-data";
 
 function makeTraceId(): string {
   return "TRC-" + Math.random().toString(36).substr(2, 8).toUpperCase();
 }
 
-function wrapResponse<T>(data: T, status = 200): ApiResponse<T> {
-  return { data, status, ok: status >= 200 && status < 300, traceId: makeTraceId() };
+function ok<T>(data: T): ApiResponse<T> {
+  return { data, status: 200, ok: true, traceId: makeTraceId() };
 }
 
-function wrapError<T>(error: string, status = 500): ApiResponse<T> {
-  return { data: null as any, status, ok: false, error, traceId: makeTraceId() };
+function err<T>(error: string, status = 500): ApiResponse<T> {
+  return { data: null as unknown as T, status, ok: false, error, traceId: makeTraceId() };
 }
 
 function makeReceipt(type: TransactionReceipt["type"], targetId: string, desc: string): TransactionReceipt {
@@ -96,77 +73,46 @@ function makeReceipt(type: TransactionReceipt["type"], targetId: string, desc: s
 }
 
 export class MockGateway implements IMedChainGateway {
-  async login(email: string, password: string) {
-    try {
-      const res = await api.login(email, password);
-      return wrapResponse({ user: res.user, token: res.token || "" });
-    } catch (e: any) { return wrapError(e.message); }
+  async login(email: string, password: string): Promise<ApiResponse<{ user: any; token: string }>> {
+    try { const res = await api.login(email, password); return ok({ user: res.user, token: res.token || "" }); }
+    catch (e: any) { return err(e.message); }
   }
-
-  async getRecords(params?: { patientId?: string }) {
-    try {
-      const data = await api.getRecords(params?.patientId);
-      return wrapResponse(data);
-    } catch (e: any) { return wrapError(e.message); }
+  async getRecords(params?: { patientId?: string }): Promise<ApiResponse<RecordMeta[]>> {
+    try { return ok(await api.getRecords(params?.patientId)); } catch (e: any) { return err(e.message); }
   }
-
-  async getRecord(recordId: string) {
-    try {
-      const data = await api.getRecord(recordId);
-      return wrapResponse(data);
-    } catch (e: any) { return wrapError(e.message); }
+  async getRecord(recordId: string): Promise<ApiResponse<RecordMeta | null>> {
+    try { return ok(await api.getRecord(recordId)); } catch (e: any) { return err(e.message); }
   }
-
-  async registerRecord(data: { patientId: string; type: string; title: string }) {
-    try {
-      const res = await api.registerRecord(data);
-      return wrapResponse(res);
-    } catch (e: any) { return wrapError(e.message); }
+  async registerRecord(data: { patientId: string; type: string; title: string }): Promise<ApiResponse<{ recordId: string; hash: string; uri: string; status: RecordStatus }>> {
+    try { return ok(await api.registerRecord(data)); } catch (e: any) { return err(e.message); }
   }
-
-  async advanceRecordStatus(recordId: string, currentStatus: RecordStatus) {
-    try {
-      const res = await api.advanceRecordStatus(recordId, currentStatus);
-      return wrapResponse(res);
-    } catch (e: any) { return wrapError(e.message); }
+  async advanceRecordStatus(recordId: string, currentStatus: RecordStatus): Promise<ApiResponse<RecordStatus>> {
+    try { return ok(await api.advanceRecordStatus(recordId, currentStatus)); } catch (e: any) { return err(e.message); }
   }
-
-  async getConsents(patientId: string) {
-    try {
-      const data = await api.getConsents(patientId);
-      return wrapResponse(data);
-    } catch (e: any) { return wrapError(e.message); }
+  async getConsents(patientId: string): Promise<ApiResponse<ConsentPolicy[]>> {
+    try { return ok(await api.getConsents(patientId)); } catch (e: any) { return err(e.message); }
   }
-
-  async getConsent(policyId: string) {
-    try {
-      const data = await api.getConsent(policyId);
-      return wrapResponse(data);
-    } catch (e: any) { return wrapError(e.message); }
+  async getConsent(policyId: string): Promise<ApiResponse<ConsentPolicy | null>> {
+    try { return ok(await api.getConsent(policyId)); } catch (e: any) { return err(e.message); }
   }
-
-  async grantConsent(requestId: string) {
+  async grantConsent(requestId: string): Promise<ApiResponse<{ policyId: string; receipt: TransactionReceipt }>> {
     try {
       const res = await api.grantConsent(requestId);
-      const receipt = makeReceipt("consent_grant", res.policyId, "Consent policy created on immutable ledger");
-      return wrapResponse({ policyId: res.policyId, receipt });
-    } catch (e: any) { return wrapError(e.message); }
+      return ok({ policyId: res.policyId, receipt: makeReceipt("consent_grant", res.policyId, "Consent policy created on immutable ledger") });
+    } catch (e: any) { return err(e.message); }
   }
-
-  async revokeConsent(policyId: string) {
+  async revokeConsent(policyId: string): Promise<ApiResponse<{ receipt: TransactionReceipt }>> {
     try {
       await api.revokeConsent(policyId);
-      const receipt = makeReceipt("consent_revoke", policyId, "Consent policy revoked on immutable ledger");
-      return wrapResponse({ receipt });
-    } catch (e: any) { return wrapError(e.message); }
+      return ok({ receipt: makeReceipt("consent_revoke", policyId, "Consent policy revoked on immutable ledger") });
+    } catch (e: any) { return err(e.message); }
   }
-
-  async verifyRecord(recordId: string) {
+  async verifyRecord(recordId: string): Promise<ApiResponse<VerificationData>> {
     try {
       const record = await api.getRecord(recordId);
-      if (!record) return wrapError("Record not found", 404);
+      if (!record) return err("Record not found", 404);
       const hashMatch = Math.random() > 0.1;
-      const data: VerificationData = {
+      return ok({
         offchainHash: record.hash_offchain,
         onchainAnchor: hashMatch ? record.hash_offchain : record.hash_offchain.slice(0, -4) + "xxxx",
         status: hashMatch ? "verified" : "mismatch",
@@ -177,69 +123,53 @@ export class MockGateway implements IMedChainGateway {
         txHash: "0x" + Array.from({ length: 12 }, () => Math.floor(Math.random() * 16).toString(16)).join("") + "...",
         blockNumber: 48290,
         committedAt: record.created_at,
-      };
-      return wrapResponse(data);
-    } catch (e: any) { return wrapError(e.message); }
+      });
+    } catch (e: any) { return err(e.message); }
   }
-
-  async getTransactionReceipt(txHash: string) {
+  async getTransactionReceipt(txHash: string): Promise<ApiResponse<TransactionReceipt>> {
     const receipt = makeReceipt("record_registration", "rec-mock", "Transaction receipt retrieved");
     receipt.txHash = txHash;
-    return wrapResponse(receipt);
+    return ok(receipt);
   }
-
-  async getAccessRequests(patientId?: string) {
-    try { return wrapResponse(await api.getAccessRequests(patientId)); } catch (e: any) { return wrapError(e.message); }
+  async getAccessRequests(patientId?: string): Promise<ApiResponse<any[]>> {
+    try { return ok(await api.getAccessRequests(patientId)); } catch (e: any) { return err(e.message); }
   }
-
-  async createAccessRequest(data: { patientPseudonym: string; scopeTypes: string[]; purpose: string; urgency: string }) {
-    try { return wrapResponse(await api.createAccessRequest(data)); } catch (e: any) { return wrapError(e.message); }
+  async createAccessRequest(data: { patientPseudonym: string; scopeTypes: string[]; purpose: string; urgency: string }): Promise<ApiResponse<{ requestId: string }>> {
+    try { return ok(await api.createAccessRequest(data)); } catch (e: any) { return err(e.message); }
   }
-
-  async retrieveRecord(recordId: string) {
+  async retrieveRecord(recordId: string): Promise<ApiResponse<{ verified: boolean; receipt: TransactionReceipt }>> {
     try {
       await api.retrieveRecord(recordId);
-      const receipt = makeReceipt("access_log", recordId, "Record retrieved and access logged on immutable ledger");
-      return wrapResponse({ verified: true, receipt });
+      return ok({ verified: true, receipt: makeReceipt("access_log", recordId, "Record retrieved and access logged on immutable ledger") });
     } catch (e: any) {
-      if (e.message === "HASH_MISMATCH") return wrapError("Hash verification failed — possible data tampering", 409);
-      return wrapError(e.message);
+      if (e.message === "HASH_MISMATCH") return err("Hash verification failed — possible data tampering", 409);
+      return err(e.message);
     }
   }
-
-  async getAuditLog(filters?: any) {
-    try { return wrapResponse(await api.getAuditLog(filters?.patientId)); } catch (e: any) { return wrapError(e.message); }
+  async getAuditLog(filters?: any): Promise<ApiResponse<AccessLogEntry[]>> {
+    try { return ok(await api.getAuditLog(filters?.patientId)); } catch (e: any) { return err(e.message); }
   }
-
-  async getLedgerEvents() {
-    try { return wrapResponse(await api.getLedgerEvents()); } catch (e: any) { return wrapError(e.message); }
+  async getLedgerEvents(): Promise<ApiResponse<LedgerEvent[]>> {
+    try { return ok(await api.getLedgerEvents()); } catch (e: any) { return err(e.message); }
   }
-
-  async getOrganizations() {
-    try { return wrapResponse(await api.getOrganizations()); } catch (e: any) { return wrapError(e.message); }
+  async getOrganizations(): Promise<ApiResponse<any[]>> {
+    try { return ok(await api.getOrganizations()); } catch (e: any) { return err(e.message); }
   }
-
-  async addOrganization(data: { name: string; type: string }) {
-    try { return wrapResponse(await api.addOrganization(data)); } catch (e: any) { return wrapError(e.message); }
+  async addOrganization(data: { name: string; type: string }): Promise<ApiResponse<{ id: string }>> {
+    try { return ok(await api.addOrganization(data)); } catch (e: any) { return err(e.message); }
   }
-
-  async getAdminUsers() {
-    try { return wrapResponse(await api.getAdminUsers()); } catch (e: any) { return wrapError(e.message); }
+  async getAdminUsers(): Promise<ApiResponse<any[]>> {
+    try { return ok(await api.getAdminUsers()); } catch (e: any) { return err(e.message); }
   }
-
-  async inviteUser(data: { name: string; email: string; role: string; orgId: string }) {
-    try { return wrapResponse(await api.inviteUser(data)); } catch (e: any) { return wrapError(e.message); }
+  async inviteUser(data: { name: string; email: string; role: string; orgId: string }): Promise<ApiResponse<{ userId: string }>> {
+    try { return ok(await api.inviteUser(data)); } catch (e: any) { return err(e.message); }
   }
-
-  async getSystemHealth() {
+  async getSystemHealth(): Promise<ApiResponse<{ degraded: string[]; healthy: string[] }>> {
     const degraded = mockOrganizations.filter(o => o.node_status !== "active").map(o => o.name);
     const healthy = mockOrganizations.filter(o => o.node_status === "active").map(o => o.name);
-    return wrapResponse({ degraded, healthy });
+    return ok({ degraded, healthy });
   }
-
-  setFailureRate(rate: number) {
-    api.setFailureRate(rate);
-  }
+  setFailureRate(rate: number) { api.setFailureRate(rate); }
 }
 
 // =================== Singleton Export ===================
