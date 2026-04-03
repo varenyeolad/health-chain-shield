@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
+import { PermissionGuard } from "@/components/PermissionGuard";
+import { getDefaultRoute } from "@/lib/permissions";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import SelectOrg from "./pages/SelectOrg";
@@ -24,6 +26,7 @@ import ProviderPatientRecords from "./pages/provider/ProviderPatientRecords";
 import ProviderRequests from "./pages/provider/ProviderRequests";
 import ProviderAudit from "./pages/provider/ProviderAudit";
 import ProviderIntegrations from "./pages/provider/ProviderIntegrations";
+import ProviderFhirCenter from "./pages/provider/ProviderFhirCenter";
 import ConsumerDashboard from "./pages/consumer/ConsumerDashboard";
 import ConsumerPatientSearch from "./pages/consumer/ConsumerPatientSearch";
 import ConsumerRequestAccess from "./pages/consumer/ConsumerRequestAccess";
@@ -37,6 +40,7 @@ import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import AdminNetwork from "./pages/admin/AdminNetwork";
 import AdminPolicies from "./pages/admin/AdminPolicies";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminMetrics from "./pages/admin/AdminMetrics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,56 +51,65 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RoleRedirect() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={getDefaultRoute(user.role)} replace />;
+}
+
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/patient/dashboard" replace /> : <Login />} />
+      <Route path="/login" element={isAuthenticated ? <RoleRedirect /> : <Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/select-org" element={isAuthenticated ? <SelectOrg /> : <Navigate to="/login" replace />} />
-      <Route path="/" element={isAuthenticated ? <Navigate to="/patient/dashboard" replace /> : <Navigate to="/login" replace />} />
+      <Route path="/" element={isAuthenticated ? <RoleRedirect /> : <Navigate to="/login" replace />} />
 
       <Route element={<AuthGate><AppShell /></AuthGate>}>
+        {/* Global — all roles */}
         <Route path="/settings" element={<Settings />} />
         <Route path="/help" element={<Help />} />
-        <Route path="/emergency-access" element={<EmergencyAccess />} />
 
         {/* Patient */}
-        <Route path="/patient/dashboard" element={<PatientDashboard />} />
-        <Route path="/patient/records" element={<PatientRecords />} />
-        <Route path="/patient/consents" element={<PatientConsents />} />
-        <Route path="/patient/consents/:policyId" element={<PatientConsentDetail />} />
-        <Route path="/patient/audit" element={<PatientAudit />} />
-        <Route path="/patient/share" element={<PatientShare />} />
-        <Route path="/patient/identity-keys" element={<PatientIdentityKeys />} />
+        <Route path="/patient/dashboard" element={<PermissionGuard><PatientDashboard /></PermissionGuard>} />
+        <Route path="/patient/records" element={<PermissionGuard><PatientRecords /></PermissionGuard>} />
+        <Route path="/patient/consents" element={<PermissionGuard><PatientConsents /></PermissionGuard>} />
+        <Route path="/patient/consents/:policyId" element={<PermissionGuard><PatientConsentDetail /></PermissionGuard>} />
+        <Route path="/patient/audit" element={<PermissionGuard><PatientAudit /></PermissionGuard>} />
+        <Route path="/patient/share" element={<PermissionGuard><PatientShare /></PermissionGuard>} />
+        <Route path="/patient/identity-keys" element={<PermissionGuard><PatientIdentityKeys /></PermissionGuard>} />
 
         {/* Provider */}
-        <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-        <Route path="/provider/patients" element={<ProviderPatients />} />
-        <Route path="/provider/patient/:id/records" element={<ProviderPatientRecords />} />
-        <Route path="/provider/requests" element={<ProviderRequests />} />
-        <Route path="/provider/audit" element={<ProviderAudit />} />
-        <Route path="/provider/integrations" element={<ProviderIntegrations />} />
+        <Route path="/provider/dashboard" element={<PermissionGuard><ProviderDashboard /></PermissionGuard>} />
+        <Route path="/provider/patients" element={<PermissionGuard><ProviderPatients /></PermissionGuard>} />
+        <Route path="/provider/patient/:id/records" element={<PermissionGuard><ProviderPatientRecords /></PermissionGuard>} />
+        <Route path="/provider/requests" element={<PermissionGuard><ProviderRequests /></PermissionGuard>} />
+        <Route path="/provider/audit" element={<PermissionGuard><ProviderAudit /></PermissionGuard>} />
+        <Route path="/provider/integrations" element={<PermissionGuard><ProviderIntegrations /></PermissionGuard>} />
+        <Route path="/provider/fhir" element={<PermissionGuard><ProviderFhirCenter /></PermissionGuard>} />
+        <Route path="/emergency-access" element={<PermissionGuard><EmergencyAccess /></PermissionGuard>} />
 
         {/* Consumer */}
-        <Route path="/consumer/dashboard" element={<ConsumerDashboard />} />
-        <Route path="/consumer/patient-search" element={<ConsumerPatientSearch />} />
-        <Route path="/consumer/request-access" element={<ConsumerRequestAccess />} />
-        <Route path="/consumer/retrieve" element={<ConsumerRetrieve />} />
-        <Route path="/consumer/audit" element={<ConsumerAudit />} />
+        <Route path="/consumer/dashboard" element={<PermissionGuard><ConsumerDashboard /></PermissionGuard>} />
+        <Route path="/consumer/patient-search" element={<PermissionGuard><ConsumerPatientSearch /></PermissionGuard>} />
+        <Route path="/consumer/request-access" element={<PermissionGuard><ConsumerRequestAccess /></PermissionGuard>} />
+        <Route path="/consumer/retrieve" element={<PermissionGuard><ConsumerRetrieve /></PermissionGuard>} />
+        <Route path="/consumer/audit" element={<PermissionGuard><ConsumerAudit /></PermissionGuard>} />
 
         {/* Regulator */}
-        <Route path="/regulator/dashboard" element={<RegulatorDashboard />} />
-        <Route path="/regulator/audit" element={<RegulatorAudit />} />
-        <Route path="/regulator/compliance" element={<RegulatorCompliance />} />
+        <Route path="/regulator/dashboard" element={<PermissionGuard><RegulatorDashboard /></PermissionGuard>} />
+        <Route path="/regulator/audit" element={<PermissionGuard><RegulatorAudit /></PermissionGuard>} />
+        <Route path="/regulator/compliance" element={<PermissionGuard><RegulatorCompliance /></PermissionGuard>} />
 
         {/* Admin */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/organizations" element={<AdminOrganizations />} />
-        <Route path="/admin/network" element={<AdminNetwork />} />
-        <Route path="/admin/policies" element={<AdminPolicies />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/dashboard" element={<PermissionGuard><AdminDashboard /></PermissionGuard>} />
+        <Route path="/admin/organizations" element={<PermissionGuard><AdminOrganizations /></PermissionGuard>} />
+        <Route path="/admin/network" element={<PermissionGuard><AdminNetwork /></PermissionGuard>} />
+        <Route path="/admin/policies" element={<PermissionGuard><AdminPolicies /></PermissionGuard>} />
+        <Route path="/admin/users" element={<PermissionGuard><AdminUsers /></PermissionGuard>} />
+        <Route path="/admin/metrics" element={<PermissionGuard><AdminMetrics /></PermissionGuard>} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
