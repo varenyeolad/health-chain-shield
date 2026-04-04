@@ -172,5 +172,82 @@ export class MockGateway implements IMedChainGateway {
   setFailureRate(rate: number) { api.setFailureRate(rate); }
 }
 
+export class BackendGateway extends MockGateway {
+  private readonly baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api/v1";
+
+  private async request<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
+    try {
+      const res = await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: {
+          "Content-Type": "application/json",
+          ...(init?.headers || {}),
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      return { data, ok: res.ok, status: res.status, error: res.ok ? undefined : data?.message, traceId: makeTraceId() };
+    } catch (e: any) {
+      return err<T>(e.message ?? "Network error", 503);
+    }
+  }
+
+  async login(email: string, password: string): Promise<ApiResponse<{ user: any; token: string }>> {
+    const res = await this.request<{ accessToken: string }>(`/auth/login`, {
+      method: "POST",
+      body: JSON.stringify({ username: email, password }),
+    });
+
+    if (!res.ok) return err(res.error || "Login failed", res.status);
+    return ok({ user: { email }, token: res.data.accessToken || "mock" });
+  }
+
+  async getRecords(params?: { patientId?: string }): Promise<ApiResponse<RecordMeta[]>> {
+    const qs = params?.patientId ? `?patientId=${encodeURIComponent(params.patientId)}` : "";
+    const res = await this.request<RecordMeta[]>(`/records${qs}`);
+    return res.ok ? ok(res.data ?? []) : err(res.error || "Failed to fetch records", res.status);
+  }
+
+  async getRecord(recordId: string): Promise<ApiResponse<RecordMeta | null>> {
+    const res = await this.request<RecordMeta | null>(`/records/${recordId}`);
+    return res.ok ? ok(res.data) : err(res.error || "Failed to fetch record", res.status);
+  }
+
+  async registerRecord(data: { patientId: string; type: string; title: string }): Promise<ApiResponse<{ recordId: string; hash: string; uri: string; status: RecordStatus }>> {
+    const res = await this.request<{ txId: string; recordId: string; hash: string; uri: string }>(`/records/register`, {
+      method: "POST",
+      body: JSON.stringify({
+        patientId: data.patientId,
+        recordType: data.type,
+        payload: { title: data.title, source: "frontend" },
+      }),
+    });
+
+    if (!res.ok) return err(res.error || "Failed to register record", res.status);
+    return ok({ ...res.data, status: "COMMITTED" });
+  }
+
+  async verifyRecord(recordId: string): Promise<ApiResponse<VerificationData>> {
+    const res = await this.request<{ valid: boolean; computedHash: string; expectedHash: string }>(`/records/${recordId}/verify`, {
+      method: "POST",
+      body: JSON.stringify({ recordId }),
+    });
+    if (!res.ok) return err(res.error || "Verify failed", res.status);
+
+    return ok({
+      offchainHash: res.data.expectedHash,
+      onchainAnchor: res.data.computedHash,
+      status: res.data.valid ? "verified" : "mismatch",
+      lastVerified: new Date().toISOString(),
+      certIssuer: "MedChain Gateway",
+      certValid: res.data.valid,
+      endorsingOrgs: ["Org1", "Org2"],
+      txHash: "N/A",
+      blockNumber: 0,
+      committedAt: new Date().toISOString(),
+    });
+  }
+}
+
 // =================== Singleton Export ===================
-export const gateway: IMedChainGateway = new MockGateway();
+const useBackend = import.meta.env.VITE_USE_BACKEND === "true";
+export const gateway: IMedChainGateway = useBackend ? new BackendGateway() : new MockGateway();

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types/medical";
+import { gateway } from "@/lib/api-gateway";
 import { Shield, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,13 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const account = DEMO_ACCOUNTS.find(a => a.email === email);
-    handleLogin(account?.role || "patient");
+    void (async () => {
+      setLoading(true);
+      const res = await gateway.login(email, password);
+      setLoading(false);
+      if (!res.ok) return;
+      handleLogin(account?.role || "patient");
+    })();
   };
 
   return (
