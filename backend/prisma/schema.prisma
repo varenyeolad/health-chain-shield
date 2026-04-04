@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  PROVIDER
+  CONSUMER
+  REGULATOR
+  ADMIN
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  type        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  passwordHash   String
+  role           UserRole
+  mfaEnabled     Boolean      @default(false)
+  status         String       @default("ACTIVE")
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Patient {
+  id             String   @id @default(cuid())
+  externalPatientId String @unique
+  pseudoId       String   @unique
+  organizationId String
+  createdAt      DateTime @default(now())
+}
+
+model RecordIndex {
+  id             String   @id @default(cuid())
+  recordId       String   @unique
+  patientId      String
+  patientPseudoId String
+  ownerOrgId     String
+  recordType     String
+  fabricTxId     String
+  currentVersion Int
+  latestHash     String
+  latestObjectUri String
+  sourceSystem   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  fileObjects    FileObject[]
+
+  @@index([patientId, recordType])
+  @@index([patientPseudoId])
+}
+
+model FileObject {
+  id          String   @id @default(cuid())
+  recordId    String
+  version     Int
+  objectUri   String   @unique
+  bucket      String
+  objectKey   String
+  contentType String
+  byteSize    Int
+  sha256      String
+  wrappedKey  String
+  keyVersion  String
+  wrappingAlg String
+  ivB64       String
+  tagB64      String
+  orgId       String
+  createdAt   DateTime @default(now())
+
+  record RecordIndex @relation(fields: [recordId], references: [recordId])
+
+  @@unique([recordId, version])
+}
+
+model ConsentRequest {
+  id            String   @id @default(cuid())
+  requestId     String   @unique
+  patientPseudoId String
+  granteeOrgId  String
+  recordTypes   String[]
+  purposes      String[]
+  status        String
+  createdAt     DateTime @default(now())
+}
+
+model ConsentIndex {
+  id            String   @id @default(cuid())
+  policyId      String   @unique
+  patientPseudoId String
+  granteeOrgId  String
+  dataScope     String
+  recordTypes   String[]
+  purpose       String[]
+  validFrom     DateTime
+  validTo       DateTime
+  status        String
+  fabricTxId    String
+  createdAt     DateTime @default(now())
+}
+
+model AuditIndex {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  recordId       String
+  patientPseudoId String
+  requesterOrgId String
+  purpose        String
+  outcome        String
+  fabricTxId     String?
+  createdAt      DateTime @default(now())
+
+  @@index([patientPseudoId, createdAt])
+}
+
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  eventType   String
+  severity    String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  body          String
+  channel       String
+  status        String
+  readAt        DateTime?
+  createdAt     DateTime @default(now())
+}
