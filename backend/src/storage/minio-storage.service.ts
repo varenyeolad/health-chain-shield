@@ -23,7 +23,7 @@ export class MinioStorageService implements StoragePort {
       await this.client.makeBucket(input.bucket, 'us-east-1');
     }
 
-    await this.client.putObject(input.bucket, input.objectKey, input.body, {
+    await this.client.putObject(input.bucket, input.objectKey, input.body, input.body.length, {
       'Content-Type': input.contentType,
     });
 
