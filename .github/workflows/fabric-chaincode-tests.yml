@@ -1,0 +1,27 @@
+name: Fabric Go chaincode checks
+on:
+  push:
+    paths:
+      - "backend/fabric-chaincode/**"
+      - ".github/workflows/fabric-chaincode-tests.yml"
+  pull_request:
+    paths:
+      - "backend/fabric-chaincode/**"
+      - ".github/workflows/fabric-chaincode-tests.yml"
+jobs:
+  go-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/fabric-chaincode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/fabric-chaincode/go.mod
+      - name: Format chaincode for compilation checks
+        run: gofmt -w *.go
+      - name: Resolve Go module checksums
+        run: go mod tidy
+      - name: Run Go tests
+        run: go test ./...

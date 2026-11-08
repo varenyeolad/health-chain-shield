@@ -1,0 +1,74 @@
+name: Fabric research - orderer BatchTimeout five configurations
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fabric-study-batching.yml'
+concurrency:
+  group: healthchain-study-batching
+  cancel-in-progress: false
+jobs:
+  batching:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    env:
+      FABRIC_VERSION: '2.5.4'
+      FABRIC_BENCH_TX: '100'
+      FABRIC_BENCH_ROUNDS: '10'
+      FABRIC_BENCH_COOLDOWN_MS: '3000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Fabric binaries, images and test-network
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -fLsS https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh -o install-fabric.sh
+          bash install-fabric.sh --fabric-version 2.5.4 docker binary samples
+          echo "FABRIC_SAMPLES=$RUNNER_TEMP/fabric-samples" >> "$GITHUB_ENV"
+      - name: Record single-runner hardware and source
+        shell: bash
+        run: |
+          mkdir -p benchmarks/results
+          {
+            echo "Commit=$GITHUB_SHA"
+            date -u +%FT%TZ
+            lscpu
+            free -h
+            docker version
+          } > benchmarks/results/batching-host.txt
+      - name: Create and verify each Fabric channel; measure confirmed commits
+        run: bash scripts/fabric-study-batch.sh
+      - name: Preserve every measurement and each channel-config proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: study-batch-timeout-${{ github.run_id }}
+          path: |
+            benchmarks/results/fabric-live-*
+            benchmarks/results/channel-config-*.json
+            benchmarks/results/batching-host.txt
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Network logs on failure
+        if: failure()
+        run: |
+          docker ps -a || true
+          docker logs peer0.org1.example.com --tail 80 || true
+          docker logs peer0.org2.example.com --tail 80 || true
+          docker logs orderer.example.com --tail 80 || true
+      - name: Clean Fabric containers and volumes
+        if: always()
+        run: |
+          if [ -f "$FABRIC_SAMPLES/test-network/network.sh" ]; then
+            cd "$FABRIC_SAMPLES/test-network"
+            ./network.sh down || true
+          fi

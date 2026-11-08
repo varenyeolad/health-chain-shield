@@ -12,7 +12,7 @@ export const mockUsers: Record<string, User> = {
   provider: { id: "prov-001", name: "Dr. James Wilson", email: "j.wilson@mercy.org", role: "provider", orgId: "org-001", orgName: "Mercy General Hospital" },
   consumer: { id: "con-001", name: "Dr. Lisa Park", email: "l.park@metro.org", role: "consumer", orgId: "org-002", orgName: "Metro Health Network" },
   regulator: { id: "reg-001", name: "Robert Hayes", email: "r.hayes@hhs.gov", role: "regulator", orgId: "org-003", orgName: "Health Oversight Agency" },
-  admin: { id: "adm-001", name: "System Admin", email: "admin@medchain.io", role: "admin" },
+  admin: { id: "adm-001", name: "System Admin", email: "admin@healthchain.example", role: "admin" },
 };
 
 export const mockOrganizations: Organization[] = [

@@ -1,0 +1,86 @@
+name: Hyperledger Caliper 0.6 - Fabric Gateway
+on:
+  workflow_dispatch:
+    inputs:
+      protocol:
+        description: "Run paper-shaped Caliper workloads (requires more resources)"
+        type: choice
+        options:
+          - smoke
+          - full
+        default: smoke
+  push:
+    paths:
+      - '.github/workflows/fabric-caliper.yml'
+      - 'benchmarks/caliper/workloads/**'
+      - 'benchmarks/caliper/smoke.yaml'
+jobs:
+  caliper:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - name: Install Fabric test network
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -fLsS https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh -o install-fabric.sh
+          bash install-fabric.sh --fabric-version 2.5.4 docker binary samples
+          echo "FABRIC_SAMPLES=$RUNNER_TEMP/fabric-samples" >> "$GITHUB_ENV"
+      - name: Deploy contracts
+        run: bash scripts/fabric-test-network.sh
+      - name: Generate Caliper network identity references
+        run: node scripts/caliper-network-profile.mjs
+      - name: Verify Caliper 0.6 connector against real Fabric
+        working-directory: benchmarks/caliper
+        shell: bash
+        env:
+          STUDY_PROTOCOL: ${{ github.event.inputs.protocol || 'full' }}
+        run: |
+          set -euo pipefail
+          npm init -y
+          npm install --no-audit --no-fund @hyperledger/caliper-cli@0.6.0
+          npx caliper bind --caliper-bind-sut fabric:fabric-gateway
+          if [ "$STUDY_PROTOCOL" = "full" ]; then
+            configurations=(benchmark.yaml pdc-benchmark.yaml pdc-read-benchmark.yaml)
+          else
+            configurations=(smoke.yaml)
+          fi
+          mkdir -p reports
+          for config in "${configurations[@]}"; do
+            echo "Running $config against LIVE Fabric peer"
+            npx caliper launch manager --caliper-flow-only-test --caliper-workspace . --caliper-benchconfig "$config" --caliper-networkconfig network.local.yaml 2>&1 | tee "reports/${config%.yaml}.log"
+            if [ -f report.html ]; then mv report.html "reports/${config%.yaml}.html"; fi
+            node check-report.mjs "$config" "reports/${config%.yaml}.log"
+          done
+      - name: Store Caliper reports and environment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caliper-results-${{ github.run_id }}
+          path: |
+            benchmarks/caliper/reports/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Network diagnostics if failed
+        if: failure()
+        run: |
+          docker ps -a || true
+          docker logs peer0.org1.example.com --tail 80 || true
+          docker logs peer0.org2.example.com --tail 80 || true
+      - name: Stop Fabric network
+        if: always()
+        run: |
+          if [ -f "$FABRIC_SAMPLES/test-network/network.sh" ]; then
+            cd "$FABRIC_SAMPLES/test-network"
+            ./network.sh down || true
+          fi

@@ -9,8 +9,8 @@ async function bootstrap(): Promise<void> {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   const config = new DocumentBuilder()
-    .setTitle('MedChain Backend API')
-    .setDescription('Gateway backend for MedChain frontend + Fabric consortium')
+    .setTitle('Health Chain Shield API')
+    .setDescription('API and Fabric integration for Health Chain Shield')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();

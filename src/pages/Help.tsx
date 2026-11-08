@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronDown, Send, Loader2, Shield, Database, Lock } from "lucide-react";
 
 const FAQS = [
-  { q: "What is MedChain?", a: "MedChain is a patient-centric medical data exchange built on a tamper-evident immutable ledger. It gives patients full control over who can access their medical records." },
+  { q: "What is Health Chain Shield?", a: "Health Chain Shield is a demonstration of patient-centered record exchange, consent management, and access auditing. This prototype uses simulated data." },
   { q: "What data is stored on the blockchain?", a: "Only metadata (record IDs, timestamps, hashes), consent policies, and audit logs are stored on the immutable ledger. Your actual medical files are stored encrypted off-chain and referenced by a secure URI." },
   { q: "How does consent work?", a: "You grant or revoke access to your records through consent policies. Each policy specifies which organization can access what types of records, for what purpose, and for how long. Every consent action is permanently recorded on the ledger." },
   { q: "Can I revoke access after granting it?", a: "Yes. You can revoke any active consent at any time. Future access will be immediately denied. However, data that has already been downloaded cannot be retrieved — we make this clear during revocation." },

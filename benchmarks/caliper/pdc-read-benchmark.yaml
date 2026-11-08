@@ -1,0 +1,23 @@
+test:
+  name: healthchain-pdc-read
+  description: Private data GetRecordKey evaluate microbenchmark
+  workers:
+    type: local
+    number: 8
+  rounds:
+    - label: get-record-key-250-offered-tps
+      txNumber: 1000
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 250
+      workload:
+        module: ./workloads/pdc-read.js
+    - label: get-record-key-400-offered-tps
+      txNumber: 1200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 400
+      workload:
+        module: ./workloads/pdc-read.js

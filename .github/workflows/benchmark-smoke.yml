@@ -1,0 +1,22 @@
+name: Benchmark harness smoke tests
+on:
+  push:
+    paths:
+      - "benchmarks/**"
+      - ".github/workflows/benchmark-smoke.yml"
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - ".github/workflows/benchmark-smoke.yml"
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test benchmark calculations and concurrency
+        run: node --test benchmarks/*.test.mjs
+      - name: Run non-evidentiary mock smoke benchmark
+        run: node benchmarks/run.mjs --experiment=baseline --driver=mock --rounds=2 --count=10 --cooldown=0

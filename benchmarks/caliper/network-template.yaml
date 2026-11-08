@@ -1,0 +1,28 @@
+# Example schema for Hyperledger Caliper 0.6.0 Fabric Gateway connector.
+# Do not use unresolved placeholders. Generate the actual profile with
+# FABRIC_SAMPLES=/abs/path node scripts/caliper-network-profile.mjs
+name: Health Chain Shield - sample profile
+version: "2.0.0"
+caliper:
+  blockchain: fabric
+  sutOptions:
+    mutualTls: false
+channels:
+  - channelName: healthchannel
+    contracts:
+      - id: healthchain
+organizations:
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: User1
+          clientPrivateKey:
+            path: "/absolute/path/to/identity/private/key"
+          clientSignedCert:
+            path: "/absolute/path/to/identity/signing/certificate"
+    peers:
+      - endpoint: localhost:7051
+        grpcOptions:
+          ssl-target-name-override: peer0.org1.example.com
+        tlsCACerts:
+          path: "/absolute/path/to/peer/tls/ca.crt"

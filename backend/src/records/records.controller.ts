@@ -22,7 +22,7 @@ export class RecordsController {
 
   @Post('register')
   register(@Body() dto: RegisterRecordDto) {
-    const actorOrgId = 'ORG_HOSPITAL_A';
+    const actorOrgId = process.env.FABRIC_MODE === 'fabric' ? process.env.FABRIC_MSP_ID ?? 'Org1MSP' : 'ORG_HOSPITAL_A';
     return this.records.register(dto, actorOrgId);
   }
 

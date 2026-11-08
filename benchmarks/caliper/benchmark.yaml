@@ -1,0 +1,55 @@
+test:
+  name: health-chain-shield-fabric
+  description: Synthetic public ledger writes and evaluate reads on a live Fabric network
+  workers:
+    type: local
+    number: 8
+  rounds:
+    - label: public-write-10-offered-tps
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: ./workloads/create-record.js
+    - label: public-write-50-offered-tps
+      txNumber: 500
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: ./workloads/create-record.js
+    - label: public-write-75-offered-tps
+      txNumber: 750
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 75
+      workload:
+        module: ./workloads/create-record.js
+    - label: public-write-100-offered-tps
+      txNumber: 1000
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: ./workloads/create-record.js
+    - label: evaluate-read-250-offered-tps
+      txNumber: 1000
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 250
+      workload:
+        module: ./workloads/read-record.js
+    - label: evaluate-read-400-offered-tps
+      txNumber: 1200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 400
+      workload:
+        module: ./workloads/read-record.js

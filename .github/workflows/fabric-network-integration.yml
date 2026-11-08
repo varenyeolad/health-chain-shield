@@ -1,0 +1,114 @@
+name: Fabric integration (Docker network)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'backend/fabric-chaincode/**'
+      - 'backend/src/fabric/gateway/**'
+      - 'backend/scripts/live-fabric-sdk-check.ts'
+      - 'backend/scripts/live-fabric-performance.ts'
+      - 'scripts/fabric-integration-test.sh'
+      - 'scripts/fabric-test-network.sh'
+      - '.github/workflows/fabric-network-integration.yml'
+jobs:
+  live-fabric:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download official Fabric 2.5.4 images, CLI and sample network
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -fLsS https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh -o install-fabric.sh
+          bash install-fabric.sh --fabric-version 2.5.4 docker binary samples
+          test -x "$RUNNER_TEMP/fabric-samples/test-network/network.sh"
+      - name: Deploy Go chaincode on the Fabric network
+        env:
+          FABRIC_SAMPLES: ${{ runner.temp }}/fabric-samples
+        run: bash scripts/fabric-test-network.sh
+      - name: Exercise Fabric chaincode on real peers and orderer
+        env:
+          FABRIC_SAMPLES: ${{ runner.temp }}/fabric-samples
+        run: bash scripts/fabric-integration-test.sh
+      - name: Validate backend Fabric Gateway SDK against live peers
+        shell: bash
+        env:
+          FABRIC_SAMPLES: ${{ runner.temp }}/fabric-samples
+          FABRIC_MODE: fabric
+          FABRIC_PEER_ENDPOINT: localhost:7051
+          FABRIC_PEER_HOST_ALIAS: peer0.org1.example.com
+          FABRIC_MSP_ID: Org1MSP
+          FABRIC_CHANNEL: healthchannel
+          FABRIC_CHAINCODE: healthchain
+        run: |
+          set -euo pipefail
+          ORG="$FABRIC_SAMPLES/test-network/organizations/peerOrganizations/org1.example.com"
+          export FABRIC_TLS_CERT_PATH="$ORG/peers/peer0.org1.example.com/tls/ca.crt"
+          export FABRIC_CERT_PATH
+          FABRIC_CERT_PATH="$(find "$ORG/users/User1@org1.example.com/msp/signcerts" -maxdepth 1 -type f | head -n 1)"
+          test -f "$FABRIC_CERT_PATH"
+          export FABRIC_KEY_PATH
+          FABRIC_KEY_PATH="$(find "$ORG/users/User1@org1.example.com/msp/keystore" -maxdepth 1 -type f | head -n 1)"
+          test -f "$FABRIC_KEY_PATH"
+          cd backend
+          npm install --no-audit --no-fund
+          npx ts-node --transpile-only scripts/live-fabric-sdk-check.ts
+      - name: Measure real Fabric commits (small CI workload)
+        shell: bash
+        env:
+          FABRIC_SAMPLES: ${{ runner.temp }}/fabric-samples
+          FABRIC_MODE: fabric
+          FABRIC_VERSION: '2.5.4'
+          FABRIC_PEER_ENDPOINT: localhost:7051
+          FABRIC_PEER_HOST_ALIAS: peer0.org1.example.com
+          FABRIC_MSP_ID: Org1MSP
+          FABRIC_CHANNEL: healthchannel
+          FABRIC_CHAINCODE: healthchain
+          FABRIC_BENCH_LEVELS: '1,2,5'
+          FABRIC_BENCH_TX: '8'
+          FABRIC_BENCH_ROUNDS: '1'
+          FABRIC_BENCH_COOLDOWN_MS: '0'
+          FABRIC_BENCH_LABEL: 'small-ci-live-commit-smoke'
+        run: |
+          set -euo pipefail
+          ORG="$FABRIC_SAMPLES/test-network/organizations/peerOrganizations/org1.example.com"
+          export FABRIC_TLS_CERT_PATH="$ORG/peers/peer0.org1.example.com/tls/ca.crt"
+          export FABRIC_CERT_PATH
+          FABRIC_CERT_PATH="$(find "$ORG/users/User1@org1.example.com/msp/signcerts" -maxdepth 1 -type f | head -n 1)"
+          export FABRIC_KEY_PATH
+          FABRIC_KEY_PATH="$(find "$ORG/users/User1@org1.example.com/msp/keystore" -maxdepth 1 -type f | head -n 1)"
+          cd backend
+          npx ts-node --transpile-only scripts/live-fabric-performance.ts
+      - name: Archive measured Fabric transactions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-live-results-${{ github.run_id }}
+          path: benchmarks/results/fabric-live-*
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Save diagnostics if unsuccessful
+        if: failure()
+        shell: bash
+        run: |
+          docker ps -a || true
+          docker logs peer0.org1.example.com --tail 100 || true
+          docker logs peer0.org2.example.com --tail 100 || true
+          docker logs orderer.example.com --tail 100 || true
+      - name: Stop isolated test network
+        if: always()
+        env:
+          FABRIC_SAMPLES: ${{ runner.temp }}/fabric-samples
+        run: |
+          if [ -e "$FABRIC_SAMPLES/test-network/network.sh" ]; then
+            cd "$FABRIC_SAMPLES/test-network"
+            ./network.sh down || true
+          fi

@@ -20,7 +20,7 @@ const DEMO_ACCOUNTS: { role: UserRole; label: string; email: string }[] = [
   { role: "provider", label: "Provider", email: "j.wilson@mercy.org" },
   { role: "consumer", label: "Consumer", email: "l.park@metro.org" },
   { role: "regulator", label: "Regulator", email: "r.hayes@hhs.gov" },
-  { role: "admin", label: "Admin", email: "admin@medchain.io" },
+  { role: "admin", label: "Admin", email: "admin@healthchain.example" },
 ];
 
 export default function Login() {
@@ -52,21 +52,21 @@ export default function Login() {
           <div className="h-10 w-10 rounded-xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center">
             <Shield className="h-5 w-5" />
           </div>
-          <span className="text-xl font-display font-semibold">MedChain</span>
+          <span className="text-xl font-display font-semibold">Health Chain Shield</span>
         </div>
         <div className="space-y-6">
           <h1 className="text-4xl font-display font-bold leading-tight">
             Your medical data,<br />your control.
           </h1>
           <p className="text-lg text-primary-foreground/80 max-w-md">
-            A patient-centric medical data exchange built on a tamper-evident immutable ledger. 
+            A prototype for patient-controlled medical data sharing and audit transparency. 
             Share records securely with full consent transparency.
           </p>
           <div className="grid grid-cols-3 gap-4 pt-4">
             {[
-              { label: "Records Anchored", value: "24,891" },
-              { label: "Active Consents", value: "12,433" },
-              { label: "Organizations", value: "67" },
+              { label: "Sample Records", value: "24,891" },
+              { label: "Sample Consents", value: "12,433" },
+              { label: "Demo Organizations", value: "67" },
             ].map(stat => (
               <div key={stat.label} className="rounded-lg bg-primary-foreground/10 backdrop-blur p-3">
                 <p className="text-2xl font-bold">{stat.value}</p>
@@ -76,7 +76,7 @@ export default function Login() {
           </div>
         </div>
         <p className="text-xs text-primary-foreground/50">
-          © 2026 MedChain Consortium · Privacy-by-design · HIPAA Compliant
+          © 2026 Health Chain Shield · Demonstration environment
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default function Login() {
             <div className="h-8 w-8 rounded-lg trust-gradient flex items-center justify-center">
               <Shield className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display font-semibold text-foreground">MedChain</span>
+            <span className="font-display font-semibold text-foreground">Health Chain Shield</span>
           </div>
 
           <div>

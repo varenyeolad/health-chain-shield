@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Experimental outputs (keep raw results in an external research archive)
+benchmarks/results/*.json
+
+# Local Fabric/Caliper credentials and benchmark profiles
+benchmarks/caliper/network.local.yaml
+backend/fabric-chaincode/vendor/
+**/crypto-config/
+**/organizations/peerOrganizations/
+**/organizations/ordererOrganizations/

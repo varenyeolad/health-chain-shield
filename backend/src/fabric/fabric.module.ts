@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { BenchmarkController } from './benchmark.controller';
 import { ConfigService } from '@nestjs/config';
 import { FABRIC_GATEWAY } from './gateway/fabric-gateway.port';
 import { HyperledgerFabricGateway } from './gateway/hyperledger-fabric.gateway';
 import { MockFabricGateway } from './gateway/mock-fabric.gateway';
 
 @Module({
+  controllers: [BenchmarkController],
   providers: [
     MockFabricGateway,
     HyperledgerFabricGateway,

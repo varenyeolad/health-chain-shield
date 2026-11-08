@@ -1,3 +1,4 @@
+version: '3.9'
 services:
   backend:
     build:
@@ -9,7 +10,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3001
-      DATABASE_URL: postgresql://postgres:1234@postgres:5432/medchain
+      DATABASE_URL: postgresql://medchain:medchain@postgres:5432/medchain
       REDIS_URL: redis://redis:6379
       S3_ENDPOINT: minio
       S3_PORT: 9000
@@ -25,13 +26,13 @@ services:
       - minio
 
   postgres:
-    image: postgres:16-bookworm
+    image: postgres:16
     container_name: medchain-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: medchain
+      POSTGRES_PASSWORD: medchain
       POSTGRES_DB: medchain
     volumes:
       - pg_data:/var/lib/postgresql/data

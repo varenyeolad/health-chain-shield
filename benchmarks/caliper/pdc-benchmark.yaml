@@ -1,0 +1,37 @@
+test:
+  name: healthchain-pdc
+  description: Private data write microbenchmarks using synthetic transient payloads
+  workers:
+    type: local
+    number: 5
+  rounds:
+    - label: put-record-key
+      txNumber: 250
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: ./workloads/pdc-write.js
+        arguments:
+          operation: PutRecordKey
+    - label: add-diagnosis
+      txNumber: 250
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: ./workloads/pdc-write.js
+        arguments:
+          operation: AddDiagnosis
+    - label: add-lab-results
+      txNumber: 250
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: ./workloads/pdc-write.js
+        arguments:
+          operation: AddLabResults

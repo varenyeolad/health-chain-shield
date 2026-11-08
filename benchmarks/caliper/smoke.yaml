@@ -1,0 +1,33 @@
+test:
+  name: health-chain-caliper-smoke
+  description: Minimal real-network Caliper connector verification (not publication results)
+  workers:
+    type: local
+    number: 2
+  rounds:
+    - label: public-write-smoke
+      txNumber: 6
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 2
+      workload:
+        module: ./workloads/create-record.js
+    - label: public-read-smoke
+      txNumber: 8
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 4
+      workload:
+        module: ./workloads/read-record.js
+    - label: pdc-write-smoke
+      txNumber: 6
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 2
+      workload:
+        module: ./workloads/pdc-write.js
+        arguments:
+          operation: PutRecordKey
